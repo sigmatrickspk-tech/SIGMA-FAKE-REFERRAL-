@@ -278,3 +278,40 @@ async def do_ref(q, uid, bot, code, cnt):
          f"{I['info']} Each used unique account with:\n{I['check']} AI photo & bio\n{I['check']} Channels joined\n{I['check']} Aged profile")
     kb = build_menu([menu_btn("🚀 Another", "menu_ref", "🎯"), menu_btn("💰 Wallet", "menu_wallet", "💳"), back_btn("menu_main")], cols=2)
     await q.edit_message_text(t, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+# ── ADMIN PANEL ──
+async def admin_cmd(upd, ctx):
+    u = upd.effective_user
+    if u.id not in ADMIN_IDS:
+        await upd.message.reply_text(f"{I['ban']} **Access Denied**", parse_mode=ParseMode.MARKDOWN)
+        return
+    await admin_menu(upd, u.id)
+
+async def admin_menu(uq, uid):
+    s = db.get_user_stats()
+    t = (f"╔══════════════════════════════╗\n║  {I['lock']} ADMIN PANEL {I['lock']}      ║\n╚══════════════════════════════╝\n\n"
+         f"{I['crown']} Welcome Admin!\n{I['users']} Users: **{s['total_users']}**\n{I['chart']} Referrals: **{s['total_referrals']}**\n{I['coin']} Coins Issued: **{s['total_coins']:.2f}**\n\n👇 **Select:**")
+    btns = [
+        [menu_btn("👥 Users", "admin_users","👥"), menu_btn("💰 Coins", "admin_coins","💰")],
+        [menu_btn("⚙️ Settings", "admin_settings","⚙️"), menu_btn("📊 Stats", "admin_bstats","📊")],
+        [menu_btn("📢 Broadcast", "admin_bcast","📢"), menu_btn("🔗 Channels", "admin_channels","🔗")],
+        [menu_btn("📋 Logs", "admin_logs","📋")],
+    ]
+    kb = InlineKeyboardMarkup(btns)
+    if isinstance(uq, Update): await uq.message.reply_text(t, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+    else: await uq.edit_message_text(t, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+
+async def admin_cb(q, ctx, u):
+    d = q.data
+    if d == "admin_users":
+        btns = [[menu_btn("📋 List All Users", "admin_ulist","📋")],
+                [menu_btn("⛔ Ban", "admin_ban","⛔"), menu_btn("✅ Unban", "admin_unban","✅")],
+                [back_btn("admin_back")]]
+        await q.edit_message_text("👥 **User Management**", reply_markup=InlineKeyboardMarkup(btns), parse_mode=ParseMode.MARKDOWN)
+    elif d == "admin_ulist":
+        us = db.get_all_users()
+        if not us: await q.edit_message_text("No users.")
+        else:
+            t = f"╔═══ USERS ({len(us)}) ═══╗\n\n"
+            for u2 in us[:15]:
+                bi = f"{I['ban']}" if u2["banned"] else f"{I['check']}"
+        
